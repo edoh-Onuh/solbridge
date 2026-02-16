@@ -49,8 +49,8 @@
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/chainport-migration-suite.git
-cd chainport-migration-suite
+git clone https://github.com/yourusername/solbridge.git
+cd solbridge
 ```
 
 2. **Install dependencies**
@@ -107,7 +107,7 @@ Navigate to [http://localhost:3000](http://localhost:3000)
 ## 📁 Project Structure
 
 ```
-chainport-migration-suite/
+solbridge/
 ├── app/
 │   ├── api/
 │   │   └── convert/
