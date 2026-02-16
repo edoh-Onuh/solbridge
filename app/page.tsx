@@ -14,7 +14,12 @@ export default function HomePage() {
     successRate: 0,
     totalValue: 0,
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Prevent hydration mismatch by only rendering wallet button on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Admin: Reset stats with Ctrl+Shift+R
   useEffect(() => {
@@ -115,10 +120,10 @@ export default function HomePage() {
               <Link href="/analytics" className="text-gray-300 hover:text-white transition-colors">
                 Analytics
               </Link>
-              <WalletMultiButton />
+              {isMounted && <WalletMultiButton />}
             </nav>
             <div className="md:hidden">
-              <WalletMultiButton />
+              {isMounted && <WalletMultiButton />}
             </div>
           </div>
         </div>
