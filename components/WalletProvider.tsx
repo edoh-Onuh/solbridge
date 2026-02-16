@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { ConnectionProvider, WalletProvider as SolanaWalletProvider } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
@@ -11,9 +11,17 @@ import { clusterApiUrl } from '@solana/web3.js';
 import '@solana/wallet-adapter-react-ui/styles.css';
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {
-  const network = WalletAdapterNetwork.Devnet;
+  // Use mainnet-beta for production, devnet for development
+  const network = WalletAdapterNetwork.Mainnet;
+  
   const endpoint = useMemo(() => {
-    return process.env.NEXT_PUBLIC_SOLANA_RPC_URL || clusterApiUrl(network);
+    // Use custom RPC if provided, otherwise fall back to public endpoint
+    const customRpc = process.env.NEXT_PUBLIC_SOLANA_RPC_URL;
+    if (customRpc) {
+      return customRpc;
+    }
+    // Fallback to public mainnet
+    return clusterApiUrl(network);
   }, [network]);
 
   const wallets = useMemo(
