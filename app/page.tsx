@@ -14,6 +14,7 @@ export default function HomePage() {
     successRate: 0,
     totalValue: 0,
   });
+  const [isLoading, setIsLoading] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
 
   // Prevent hydration mismatch by only rendering wallet button on client
