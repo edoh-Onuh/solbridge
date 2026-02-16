@@ -259,7 +259,7 @@ export default function HomePage() {
           ) : (
             <div className="flex flex-col items-center gap-4">
               <p className="text-yellow-300 text-sm">Connect your wallet to get started</p>
-              <WalletMultiButton />
+              {isMounted && <WalletMultiButton />}
             </div>
           )}
         </div>
