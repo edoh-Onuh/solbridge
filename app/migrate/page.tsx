@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
@@ -8,6 +8,7 @@ import { ArrowLeft, Wallet, ArrowRight, Loader2, Check, AlertTriangle, ExternalL
 
 export default function MigratePage() {
   const { publicKey } = useWallet();
+  const [mounted, setMounted] = useState(false);
   const [evmAddress, setEvmAddress] = useState('');
   const [isMigrating, setIsMigrating] = useState(false);
   const [migrationComplete, setMigrationComplete] = useState(false);
@@ -18,6 +19,11 @@ export default function MigratePage() {
     totalValue: string;
     txHash: string;
   } | null>(null);
+
+  // Fix hydration error by only rendering wallet button on client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleMigrate = async () => {
     if (!publicKey) {
@@ -95,7 +101,7 @@ export default function MigratePage() {
                 <Wallet className="w-6 h-6 text-yellow-500" />
                 <h1 className="text-xl font-bold text-white">Wallet Migration</h1>
               </div>
-              <WalletMultiButton />
+              {mounted && <WalletMultiButton />}
             </div>
           </div>
         </div>

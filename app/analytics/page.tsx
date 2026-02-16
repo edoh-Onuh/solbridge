@@ -61,7 +61,7 @@ export default function AnalyticsPage() {
         setMigrationData(data.dailyVolume.map((day: any) => ({
           name: day.name,
           migrations: day.transactions,
-          value: day.value * 1000 // Scale for better visualization
+          value: Math.round(day.value * 100) / 100 // Round to 2 decimals
         })));
         
         // Update program distribution
@@ -181,14 +181,14 @@ export default function AnalyticsPage() {
           <StatCard
             icon={<TrendingUp className="w-8 h-8 text-green-400" />}
             title="Total Value"
-            value={`$${(stats.totalValue / 1000).toFixed(0)}K`}
+            value={`${stats.totalValue.toFixed(2)} SOL`}
             change="+8.3%"
             positive
           />
           <StatCard
             icon={<Zap className="w-8 h-8 text-yellow-400" />}
             title="Success Rate"
-            value={`${stats.successRate}%`}
+            value={`${stats.successRate.toFixed(1)}%`}
             change="+0.2%"
             positive
           />
