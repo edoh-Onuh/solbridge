@@ -1,335 +1,339 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { ArrowRight, Code, Wallet, Database, BarChart3, Zap, Shield, Sparkles, Activity, TrendingUp } from 'lucide-react';
+import {
+  ArrowRight, Code, Wallet, BarChart3, Zap, Shield, Sparkles,
+  Activity, Globe, Layers, Menu, X, ChevronRight, CheckCircle2,
+  GitBranch, ArrowUpRight, Clock, Users, TrendingUp
+} from 'lucide-react';
 
 export default function HomePage() {
   const { publicKey, connected } = useWallet();
-  const [stats, setStats] = useState({
-    contractsMigrated: 0,
-    walletsConnected: 0,
-    successRate: 0,
-    totalValue: 0,
-  });
-  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({ contractsMigrated: 0, walletsConnected: 0, successRate: 100 });
   const [isMounted, setIsMounted] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
-  const heroRef = useRef<HTMLDivElement>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [networkStats, setNetworkStats] = useState({ tps: 0, slot: 0, blockTime: 0 });
 
-  // Prevent hydration mismatch by only rendering wallet button on client
-  useEffect(() => {
-    setIsMounted(true);
-    setTimeout(() => setIsVisible(true), 100);
-  }, []);
+  useEffect(() => { setIsMounted(true); }, []);
 
-  // Admin: Reset stats with Ctrl+Shift+R
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'R') {
-        e.preventDefault();
-        if (confirm('Reset all statistics? This will clear conversion history.')) {
-          localStorage.removeItem('contractsMigrated');
-          localStorage.removeItem('walletsConnected');
-          localStorage.removeItem('successfulMigrations');
-          localStorage.removeItem('totalMigrations');
-          localStorage.removeItem('connectedWallets');
-          setStats({
-            contractsMigrated: 0,
-            walletsConnected: 0,
-            successRate: 100,
-            totalValue: 0,
-          });
-          alert('✅ Statistics reset successfully!');
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, []);
-
-  // Fetch live stats from localStorage and simulate real-time data
   useEffect(() => {
     const fetchStats = () => {
-      // Get stored stats from localStorage
       const storedContracts = parseInt(localStorage.getItem('contractsMigrated') || '0');
-      const storedWallets = parseInt(localStorage.getItem('walletsConnected') || '0');
+      const connectedWallets = JSON.parse(localStorage.getItem('connectedWallets') || '[]');
       const storedSuccesses = parseInt(localStorage.getItem('successfulMigrations') || '0');
       const storedTotal = parseInt(localStorage.getItem('totalMigrations') || '0');
-      
-      // Calculate success rate
-      const successRate = storedTotal > 0 
-        ? Math.round((storedSuccesses / storedTotal) * 100) 
-        : 100;
-
-      setStats({
-        contractsMigrated: storedContracts,
-        walletsConnected: storedWallets,
-        successRate,
-        totalValue: storedTotal * 12450, // Average $12,450 per migration
-      });
-      setIsLoading(false);
+      const successRate = storedTotal > 0 ? Math.round((storedSuccesses / storedTotal) * 100) : 100;
+      setStats({ contractsMigrated: storedContracts, walletsConnected: connectedWallets.length, successRate });
     };
-
     fetchStats();
-    
-    // Update stats every 5 seconds to show real-time changes
     const interval = setInterval(fetchStats, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  // Track wallet connection
   useEffect(() => {
     if (connected && publicKey) {
-      const walletAddress = publicKey.toString();
-      const connectedWallets = JSON.parse(localStorage.getItem('connectedWallets') || '[]');
-      
-      // Only count unique wallets
-      if (!connectedWallets.includes(walletAddress)) {
-        connectedWallets.push(walletAddress);
-        localStorage.setItem('connectedWallets', JSON.stringify(connectedWallets));
-        localStorage.setItem('walletsConnected', connectedWallets.length.toString());
-        
-        // Update stats immediately
-        setStats(prev => ({
-          ...prev,
-          walletsConnected: connectedWallets.length,
-        }));
+      const addr = publicKey.toString();
+      const wallets = JSON.parse(localStorage.getItem('connectedWallets') || '[]');
+      if (!wallets.includes(addr)) {
+        wallets.push(addr);
+        localStorage.setItem('connectedWallets', JSON.stringify(wallets));
+        setStats(prev => ({ ...prev, walletsConnected: wallets.length }));
       }
     }
   }, [connected, publicKey]);
 
+  useEffect(() => {
+    const fetchNetwork = async () => {
+      try {
+        const res = await fetch('/api/network-stats');
+        const data = await res.json();
+        if (data.success) setNetworkStats(data);
+      } catch { /* silent */ }
+    };
+    fetchNetwork();
+    const interval = setInterval(fetchNetwork, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black">
-      {/* Header */}
-      <header className="border-b border-yellow-600/30 backdrop-blur-sm bg-black/20 sticky top-0 z-50 safe-area-top">
-        <div className="container-responsive">
-          <div className="flex justify-between items-center h-14 sm:h-16">
-            <div className="flex items-center space-x-2">
-              <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500" />
-              <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-yellow-400 to-amber-400 bg-clip-text text-transparent">
-                SolBridge
-              </h1>
-            </div>
-            <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
-              <Link href="/convert" className="text-gray-300 hover:text-white transition-all text-sm lg:text-base touch-manipulation">
-                Convert
-              </Link>
-              <Link href="/migrate" className="text-gray-300 hover:text-white transition-all text-sm lg:text-base touch-manipulation">
-                Migrate
-              </Link>
-              <Link href="/analytics" className="text-gray-300 hover:text-white transition-all text-sm lg:text-base touch-manipulation">
-                Analytics
-              </Link>
-              {isMounted && <WalletMultiButton />}
+    <div className="min-h-screen bg-[#0A0A0F] text-white overflow-x-hidden">
+      {/* Ambient glow */}
+      <div className="fixed inset-0 pointer-events-none" aria-hidden="true">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-yellow-600/5 rounded-full blur-[128px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-600/5 rounded-full blur-[128px]" />
+      </div>
+
+      {/* Navbar */}
+      <header className="relative z-50 border-b border-white/5 backdrop-blur-xl bg-black/40 sticky top-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-400 to-amber-600 flex items-center justify-center shadow-lg shadow-yellow-500/20 group-hover:shadow-yellow-500/40 transition-shadow">
+                <Sparkles className="w-4 h-4 text-black" />
+              </div>
+              <span className="text-xl font-bold tracking-tight">Sol<span className="text-yellow-400">Bridge</span></span>
+            </Link>
+
+            <nav className="hidden md:flex items-center gap-1">
+              {[
+                { label: 'Convert', href: '/convert', icon: Code },
+                { label: 'Migrate', href: '/migrate', icon: GitBranch },
+                { label: 'Analytics', href: '/analytics', icon: BarChart3 },
+              ].map(item => (
+                <Link key={item.href} href={item.href}
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-all">
+                  <item.icon className="w-3.5 h-3.5" />
+                  {item.label}
+                </Link>
+              ))}
+              <div className="ml-3 pl-3 border-l border-white/10">
+                {isMounted && <WalletMultiButton />}
+              </div>
             </nav>
-            <div className="md:hidden">
-              {isMounted && <WalletMultiButton />}
-            </div>
+
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 text-gray-400 hover:text-white transition-colors" aria-label="Toggle menu">
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-white/5 bg-black/95 backdrop-blur-xl animate-fade-in">
+            <div className="p-4 space-y-1">
+              {[
+                { label: 'Convert Contracts', href: '/convert', icon: Code, desc: 'AI-powered Solidity → Rust' },
+                { label: 'Migrate Wallets', href: '/migrate', icon: GitBranch, desc: 'Cross-chain asset transfer' },
+                { label: 'Analytics', href: '/analytics', icon: BarChart3, desc: 'Live blockchain metrics' },
+              ].map(item => (
+                <Link key={item.href} href={item.href} onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors group">
+                  <div className="w-10 h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center shrink-0">
+                    <item.icon className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-white group-hover:text-yellow-300 transition-colors">{item.label}</div>
+                    <div className="text-xs text-gray-500">{item.desc}</div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-600 shrink-0" />
+                </Link>
+              ))}
+              <div className="pt-3 border-t border-white/5">{isMounted && <WalletMultiButton />}</div>
+            </div>
+          </div>
+        )}
       </header>
 
-      {/* Hero Section */}
-      <main className="container-responsive py-12 sm:py-16 md:py-20 safe-area-bottom">
-        <div className="text-center mb-12 sm:mb-16 md:mb-20 animate-fade-in">
-          <div className="inline-block mb-4">
-            <span className="px-3 sm:px-4 py-2 rounded-full bg-yellow-600/20 border border-yellow-500/30 text-yellow-300 text-xs sm:text-sm font-medium touch-manipulation">
-              🚀 Built for Solana Graveyard Hackathon 2026
-            </span>
-          </div>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-4 sm:mb-6 leading-tight px-4 animate-slide-up">
-            Universal <span className="bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-600 bg-clip-text text-transparent">EVM→Solana</span><br className="hidden sm:block" />
-            <span className="sm:hidden"> </span>Migration Suite
-          </h2>
-          <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-8 sm:mb-10 leading-relaxed px-4 animate-slide-up" style={{animationDelay: '0.1s'}}>
-            AI-powered smart contract conversion, automated state migration, and seamless wallet transfer. 
-            Migrate your entire EVM ecosystem to Solana in minutes, not months.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center px-4 animate-slide-up" style={{animationDelay: '0.2s'}}>
-            <Link 
-              href="/convert"
-              className="btn-primary shadow-lg shadow-yellow-500/50 flex items-center justify-center gap-2"
-              aria-label="Start converting contracts"
-            >
-              <span>Start Converting</span>
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-            <Link 
-              href="/analytics"
-              className="px-6 sm:px-8 py-3 sm:py-4 bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold rounded-lg transition-all backdrop-blur-sm flex items-center justify-center gap-2 touch-manipulation hover:scale-105 active:scale-95"
-              aria-label="View analytics"
-            >
-              <span>View Analytics</span>
-              <BarChart3 className="w-5 h-5" />
-            </Link>
+      {/* Hero */}
+      <section className="relative pt-16 sm:pt-24 pb-16 sm:pb-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 text-xs font-medium mb-8 animate-fade-in">
+              <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
+              Solana Graveyard Hackathon 2026 — Migrations Track
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 animate-slide-up">
+              <span className="text-white">Migrate to </span>
+              <span className="bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-600 bg-clip-text text-transparent">Solana</span>
+              <br />
+              <span className="text-gray-500 text-3xl sm:text-4xl md:text-5xl lg:text-6xl">in minutes, not months</span>
+            </h1>
+
+            <p className="text-base sm:text-lg text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed animate-slide-up" style={{ animationDelay: '0.1s' }}>
+              AI-powered smart contract conversion from Solidity to Rust/Anchor,
+              seamless wallet migration, and real-time cross-chain analytics.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center animate-slide-up" style={{ animationDelay: '0.2s' }}>
+              <Link href="/convert"
+                className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold rounded-xl shadow-lg shadow-yellow-500/25 hover:shadow-yellow-500/40 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                Start Converting
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+              <Link href="/analytics"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white font-medium rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]">
+                <BarChart3 className="w-4 h-4" /> View Analytics
+              </Link>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-x-8 gap-y-3 mt-10 text-xs text-gray-500 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> Non-custodial</span>
+              <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-yellow-500" /> Security-first</span>
+              <span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-amber-500" /> Powered by GPT-4</span>
+              <span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-blue-500" /> Multi-chain</span>
+            </div>
           </div>
         </div>
+      </section>
 
-        {/* Features Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 mb-12 sm:mb-16 md:mb-20">
-          <FeatureCard
-            icon={<Code className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-400" />}
-            title="AI Smart Contract Converter"
-            description="Convert Solidity contracts to Rust/Anchor with GPT-4 powered analysis. Side-by-side diff view and automated testing."
-            link="/convert"
-          />
-          <FeatureCard
-            icon={<Wallet className="w-8 h-8 sm:w-10 sm:h-10 text-amber-400" />}
-            title="One-Click Wallet Migration"
-            description="Transfer assets from EVM wallets (MetaMask) to Solana wallets (Phantom) with bridge integration and fee optimization."
-            link="/migrate"
-          />
-          <FeatureCard
-            icon={<Database className="w-8 h-8 sm:w-10 sm:h-10 text-pink-400" />}
-            title="Automated State Migration"
-            description="Transform and migrate contract state with schema mapping, data validation, and rollback protection."
-            link="/migrate"
-          />
-          <FeatureCard
-            icon={<BarChart3 className="w-8 h-8 sm:w-10 sm:h-10 text-green-400" />}
-            title="Live Migration Analytics"
-            description="Real-time dashboard tracking migrations, success rates, gas optimization, and cross-chain activity."
-            link="/analytics"
-          />
-          <FeatureCard
-            icon={<Zap className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-400" />}
-            title="Token Economics Optimizer"
-            description="Calculate optimal liquidity distribution, bridge selection, and fee structures for your token migration."
-            link="/analytics"
-          />
-          <FeatureCard
-            icon={<Shield className="w-8 h-8 sm:w-10 sm:h-10 text-red-400" />}
-            title="Security-First Architecture"
-            description="Comprehensive security checks, audit logging, and transaction verification for every migration step."
-            link="/convert"
-          />
-        </div>
-
-        {/* Stats Section */}
-        <div className="card mb-12 sm:mb-16 md:mb-20 animate-scale-in">
-          <div className="flex items-center justify-center gap-2 mb-4 sm:mb-6">
-            <Activity className={`w-4 h-4 sm:w-5 sm:h-5 ${isLoading ? 'text-gray-400' : 'text-yellow-400 animate-pulse'}`} />
-            <span className="text-xs sm:text-sm text-gray-400">
-              {isLoading ? 'Loading stats...' : 'Live Statistics'}
-            </span>
+      {/* Live Network Bar */}
+      <section className="relative border-y border-white/5 bg-white/[0.02]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-wrap justify-center gap-6 sm:gap-12 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-gray-500">Solana Mainnet</span>
+              <span className="text-white font-mono font-medium">{networkStats.tps > 0 ? `${networkStats.tps.toLocaleString()} TPS` : 'Live'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5 text-gray-500" />
+              <span className="text-gray-500">Block Time</span>
+              <span className="text-white font-mono font-medium">{networkStats.blockTime > 0 ? `${networkStats.blockTime.toFixed(0)}ms` : '~400ms'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Layers className="w-3.5 h-3.5 text-gray-500" />
+              <span className="text-gray-500">Slot</span>
+              <span className="text-white font-mono font-medium">{networkStats.slot > 0 ? networkStats.slot.toLocaleString() : '—'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Activity className="w-3.5 h-3.5 text-gray-500" />
+              <span className="text-gray-500">Migrations</span>
+              <span className="text-white font-mono font-medium">{stats.contractsMigrated}</span>
+            </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 md:gap-8 text-center">
-            <StatCard 
-              number={stats.contractsMigrated.toString()} 
-              label="Contracts Migrated" 
-              isLive={!isLoading}
-            />
-            <StatCard 
-              number={connected ? stats.walletsConnected.toString() : '0'} 
-              label="Wallets Connected" 
-              highlight={connected}
-              isLive={!isLoading}
-            />
-            <StatCard 
-              number={`${stats.successRate}%`} 
-              label="Success Rate" 
-              isLive={!isLoading}
-            />
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="relative py-20 sm:py-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Everything you need to <span className="text-yellow-400">migrate</span></h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">A comprehensive toolkit for moving your EVM projects to Solana&apos;s high-performance blockchain.</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { icon: Code, title: 'AI Contract Converter', desc: 'GPT-4 powered Solidity → Rust/Anchor conversion with side-by-side diff, complexity analysis, and downloadable output.', href: '/convert', color: 'text-yellow-400', bg: 'bg-yellow-500/10', tag: 'Core' },
+              { icon: GitBranch, title: 'Wallet Migration', desc: 'Connect MetaMask and Phantom simultaneously. Transfer tokens and NFTs across chains via Wormhole with fee optimization.', href: '/migrate', color: 'text-amber-400', bg: 'bg-amber-500/10', tag: 'Core' },
+              { icon: BarChart3, title: 'Live Analytics', desc: 'Real-time dashboard with live Solana mainnet data. Track transactions, success rates, and program activity.', href: '/analytics', color: 'text-green-400', bg: 'bg-green-500/10', tag: 'Dashboard' },
+              { icon: Zap, title: 'Token Optimizer', desc: 'Calculate optimal liquidity distribution, select best bridges, and estimate migration duration from network conditions.', href: '/analytics', color: 'text-yellow-400', bg: 'bg-yellow-500/10', tag: 'Tooling' },
+              { icon: Shield, title: 'Security Audit', desc: 'Automated security analysis of converted contracts. Detect reentrancy, overflow, and access control vulnerabilities.', href: '/convert', color: 'text-red-400', bg: 'bg-red-500/10', tag: 'Security' },
+              { icon: Layers, title: 'State Migration', desc: 'Transform and migrate on-chain state with schema mapping, data validation, and automatic rollback protection.', href: '/migrate', color: 'text-blue-400', bg: 'bg-blue-500/10', tag: 'Advanced' },
+            ].map((f, i) => (
+              <Link key={i} href={f.href} className="group relative">
+                <div className="h-full p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-yellow-500/20 hover:bg-white/[0.04] transition-all duration-300">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`w-10 h-10 rounded-xl ${f.bg} flex items-center justify-center`}>
+                      <f.icon className={`w-5 h-5 ${f.color}`} />
+                    </div>
+                    <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider bg-white/5 px-2 py-0.5 rounded-full">{f.tag}</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-yellow-300 transition-colors">{f.title}</h3>
+                  <p className="text-sm text-gray-500 leading-relaxed">{f.desc}</p>
+                  <div className="mt-4 flex items-center gap-1 text-xs text-yellow-500/70 group-hover:text-yellow-400 transition-colors">
+                    <span>Explore</span><ArrowUpRight className="w-3 h-3" />
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="relative py-20 sm:py-28 bg-white/[0.01]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">How it <span className="text-yellow-400">works</span></h2>
+            <p className="text-gray-400 max-w-xl mx-auto">Three simple steps to migrate your EVM project to Solana.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { step: '01', title: 'Connect & Upload', desc: 'Connect your Solana wallet and paste your Solidity smart contract into the converter.', icon: Wallet },
+              { step: '02', title: 'AI Converts', desc: 'GPT-4 analyzes your contract, maps patterns to Anchor/Rust equivalents, and generates production-ready code.', icon: Code },
+              { step: '03', title: 'Migrate & Deploy', desc: 'Transfer your assets, deploy the converted contract, and monitor everything with real-time analytics.', icon: Zap },
+            ].map((s, i) => (
+              <div key={i} className="relative text-center">
+                <div className="text-7xl font-black text-white/[0.03] absolute -top-4 left-1/2 -translate-x-1/2 select-none pointer-events-none">{s.step}</div>
+                <div className="relative pt-8">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-500/10 to-amber-500/10 border border-yellow-500/20 flex items-center justify-center mx-auto mb-5">
+                    <s.icon className="w-6 h-6 text-yellow-400" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-2">{s.title}</h3>
+                  <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">{s.desc}</p>
+                </div>
+                {i < 2 && <div className="hidden md:block absolute top-16 -right-4 w-8 text-yellow-600/20"><ChevronRight className="w-8 h-8" /></div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats */}
+      <section className="relative py-20 sm:py-24">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+            {[
+              { value: stats.contractsMigrated.toString(), label: 'Contracts Converted', icon: Code },
+              { value: stats.walletsConnected.toString(), label: 'Wallets Connected', icon: Users },
+              { value: `${stats.successRate}%`, label: 'Success Rate', icon: TrendingUp },
+              { value: networkStats.tps > 0 ? Math.round(networkStats.tps).toLocaleString() : '4,000+', label: 'Solana TPS', icon: Zap },
+            ].map((s, i) => (
+              <div key={i} className="text-center p-5 sm:p-6 rounded-2xl bg-white/[0.02] border border-white/5">
+                <s.icon className="w-5 h-5 text-yellow-500/50 mx-auto mb-3" />
+                <div className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent mb-1">{s.value}</div>
+                <div className="text-[11px] sm:text-xs text-gray-500">{s.label}</div>
+              </div>
+            ))}
           </div>
           {connected && (
-            <div className="mt-4 sm:mt-6 text-center animate-fade-in">
-              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-600/20 border border-green-500/30 rounded-full">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                <span className="text-green-200 text-xs sm:text-sm">
-                  <span className="hidden sm:inline">Your wallet is counted: </span>
-                  {publicKey?.toString().slice(0, 4)}...{publicKey?.toString().slice(-4)}
-                </span>
+            <div className="mt-8 text-center animate-fade-in">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-full">
+                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-green-300 text-sm font-medium">Connected: {publicKey?.toString().slice(0, 4)}...{publicKey?.toString().slice(-4)}</span>
               </div>
             </div>
           )}
         </div>
+      </section>
 
-        {/* CTA Section */}
-        <div className="text-center card animate-fade-in">
-          <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">
-            Ready to Migrate to Solana?
-          </h3>
-          <p className="text-sm sm:text-base text-gray-300 mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
-            Join the next generation of blockchain with lightning-fast transactions, 
-            minimal fees, and unparalleled scalability.
-          </p>
-          {publicKey ? (
-            <Link 
-              href="/migrate"
-              className="btn-primary inline-flex items-center gap-2 shadow-lg shadow-yellow-500/50"
-              aria-label="Start your migration"
-            >
-              <span>Start Your Migration</span>
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-          ) : (
-            <div className="flex flex-col items-center gap-4">
-              <p className="text-yellow-300 text-xs sm:text-sm">Connect your wallet to get started</p>
-              {isMounted && <WalletMultiButton />}
-            </div>
-          )}
+      {/* CTA */}
+      <section className="relative py-20 sm:py-28">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-yellow-500/5 to-amber-500/5 border border-yellow-500/10">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Ready to bridge to Solana?</h2>
+            <p className="text-gray-400 mb-8 max-w-lg mx-auto">Join developers moving to the fastest blockchain. Non-custodial, AI-powered, and built for production.</p>
+            {publicKey ? (
+              <Link href="/migrate"
+                className="group inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold rounded-xl shadow-lg shadow-yellow-500/25 hover:shadow-yellow-500/40 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                Start Your Migration <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            ) : (
+              <div className="flex flex-col items-center gap-4">
+                <p className="text-yellow-300/70 text-sm">Connect your wallet to get started</p>
+                {isMounted && <WalletMultiButton />}
+              </div>
+            )}
+          </div>
         </div>
-      </main>
+      </section>
 
       {/* Footer */}
-      <footer className="border-t border-yellow-800/30 mt-12 sm:mt-20 py-6 sm:py-8 bg-black/20 backdrop-blur-sm safe-area-bottom">
-        <div className="container-responsive">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-3 sm:gap-4">
-            <div className="flex items-center space-x-2">
-              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-500" />
-              <span className="text-gray-400 text-sm sm:text-base">SolBridge © 2026</span>
+      <footer className="border-t border-white/5 py-8 bg-black/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-gradient-to-br from-yellow-400 to-amber-600 flex items-center justify-center">
+                <Sparkles className="w-3.5 h-3.5 text-black" />
+              </div>
+              <span className="text-sm text-gray-500">SolBridge © 2026</span>
             </div>
-            <div className="text-gray-400 text-xs sm:text-sm text-center md:text-right">
-              Built for Solana Graveyard Hackathon | Migrations Track
+            <div className="flex items-center gap-6 text-xs text-gray-600">
+              <Link href="/convert" className="hover:text-gray-400 transition-colors">Convert</Link>
+              <Link href="/migrate" className="hover:text-gray-400 transition-colors">Migrate</Link>
+              <Link href="/analytics" className="hover:text-gray-400 transition-colors">Analytics</Link>
+              <a href="https://github.com/edoh-Onuh/solbridge" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">GitHub</a>
             </div>
+            <div className="text-xs text-gray-600">Solana Graveyard Hackathon — Migrations Track</div>
           </div>
         </div>
       </footer>
-    </div>
-  );
-}
-
-function FeatureCard({ icon, title, description, link }: { 
-  icon: React.ReactNode; 
-  title: string; 
-  description: string; 
-  link: string;
-}) {
-  return (
-    <Link href={link} className="group block h-full touch-manipulation">
-      <div className="h-full p-4 sm:p-6 interactive-card bg-gradient-to-br from-yellow-900/20 to-amber-900/20 backdrop-blur-sm border border-yellow-700/30 rounded-xl">
-        <div className="mb-3 sm:mb-4">{icon}</div>
-        <h3 className="text-base sm:text-xl font-bold text-white mb-2 group-hover:text-yellow-300 transition-colors">
-          {title}
-        </h3>
-        <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">{description}</p>
-      </div>
-    </Link>
-  );
-}
-
-function StatCard({ number, label, highlight, isLive }: { 
-  number: string; 
-  label: string; 
-  highlight?: boolean;
-  isLive?: boolean;
-}) {
-  return (
-    <div className={`transition-all duration-300 ${highlight ? 'scale-105 sm:scale-110' : ''}`}>
-      <div className={`text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r ${
-        highlight 
-          ? 'from-yellow-400 to-amber-400' 
-          : 'from-yellow-400 to-amber-500'
-      } bg-clip-text text-transparent mb-2 ${isLive ? 'animate-pulse-glow' : ''}`}>
-        {number}
-      </div>
-      <div className={`text-xs sm:text-sm md:text-base ${highlight ? 'text-green-300 font-semibold' : 'text-gray-400'}`}>
-        {label}
-      </div>
     </div>
   );
 }

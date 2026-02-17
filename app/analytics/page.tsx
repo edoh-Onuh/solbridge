@@ -1,9 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, BarChart3, TrendingUp, Users, Zap, Activity, RefreshCw, Wifi, WifiOff } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  ArrowLeft, BarChart3, TrendingUp, Users, Zap, Activity,
+  RefreshCw, Wifi, WifiOff, ExternalLink, Sparkles, Clock
+} from 'lucide-react';
+import {
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis,
+  CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
+} from 'recharts';
+
+const PIE_COLORS = ['#eab308', '#f59e0b', '#d97706', '#b45309', '#92400e', '#78350f'];
 
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
@@ -11,325 +19,268 @@ export default function AnalyticsPage() {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [dataSource, setDataSource] = useState<'live' | 'cache' | 'error'>('live');
   const [error, setError] = useState<string | null>(null);
-  const [cacheInfo, setCacheInfo] = useState<string | null>(null);
-  
-  const [migrationData, setMigrationData] = useState([
-    { name: 'Mon', migrations: 0, value: 0 },
-    { name: 'Tue', migrations: 0, value: 0 },
-    { name: 'Wed', migrations: 0, value: 0 },
-    { name: 'Thu', migrations: 0, value: 0 },
-    { name: 'Fri', migrations: 0, value: 0 },
-    { name: 'Sat', migrations: 0, value: 0 },
-    { name: 'Sun', migrations: 0, value: 0 },
-  ]);
 
-  const [contractData, setContractData] = useState([
-    { name: 'Token', count: 0 },
-    { name: 'System', count: 0 },
-    { name: 'Smart Contract', count: 0 },
-  ]);
+  const [dailyData, setDailyData] = useState<{ name: string; transactions: number; value: number }[]>([]);
+  const [programData, setProgramData] = useState<{ name: string; count: number }[]>([]);
+  const [stats, setStats] = useState({ total: 0, volume: 0, successRate: 100, accounts: 0 });
+  const [recentTxs, setRecentTxs] = useState<any[]>([]);
 
-  const [stats, setStats] = useState({
-    totalMigrations: 0,
-    totalValue: 0,
-    successRate: 100,
-    activeUsers: 0,
-  });
-
-  const [recentMigrations, setRecentMigrations] = useState<any[]>([]);
-
-  // Fetch live data from Solana
-  const fetchAnalytics = async (isRefresh = false) => {
+  const fetchAnalytics = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
-    
     try {
-      // Fetch live data from API
-      const response = await fetch('/api/analytics');
-      const result = await response.json();
-      
-      if (result.success && result.data) {
-        const data = result.data;
-        
-        // Update stats from live data
+      const res = await fetch('/api/analytics');
+      const json = await res.json();
+
+      if (json.success && json.data) {
+        const d = json.data;
         setStats({
-          totalMigrations: data.totalTransactions,
-          totalValue: data.totalVolume,
-          successRate: data.successRate,
-          activeUsers: data.activeAccounts,
+          total: d.totalTransactions,
+          volume: d.totalVolume,
+          successRate: d.successRate,
+          accounts: d.activeAccounts,
         });
-        
-        // Update daily volume chart
-        setMigrationData(data.dailyVolume.map((day: any) => ({
-          name: day.name,
-          migrations: day.transactions,
-          value: Math.round(day.value * 100) / 100 // Round to 2 decimals
-        })));
-        
-        // Update program distribution
-        setContractData(data.programDistribution);
-        
-        // Format recent transactions for display
-        const formattedTransactions = data.recentTransactions.map((tx: any, index: number) => ({
-          id: index,
-          type: tx.type,
-          from: tx.from.slice(0, 8) + '...',
-          to: tx.to.slice(0, 8) + '...',
-          value: `${tx.value.toFixed(4)} SOL`,
-          time: getTimeAgo(tx.timestamp),
-          status: tx.status,
-          signature: tx.signature
-        }));
-        
-        setRecentMigrations(formattedTransactions);
-        
-        // Update data source based on response
-        if (result.source === 'cache' || result.source === 'stale-cache') {
-          setDataSource('cache');
-          setCacheInfo(result.source === 'stale-cache' ? 'Using cached data (RPC busy)' : `Cached (${Math.floor((result.expiresIn || 0) / 1000)}s)`);
-        } else {
-          setDataSource('live');
-          setCacheInfo(null);
-        }
-        
+        setDailyData(d.dailyVolume);
+        setProgramData(d.programDistribution);
+        setRecentTxs(
+          d.recentTransactions.map((tx: any, i: number) => ({
+            id: i,
+            type: tx.type,
+            from: tx.from + '...',
+            to: tx.to + '...',
+            value: tx.value,
+            time: tx.timestamp,
+            status: tx.status,
+            sig: tx.signature,
+          }))
+        );
+        setDataSource(json.source === 'live' ? 'live' : 'cache');
         setError(null);
       } else {
-        throw new Error(result.error || 'Failed to fetch live data');
+        throw new Error(json.error || 'Failed to fetch');
       }
-
       setLastUpdate(new Date());
-    } catch (error: any) {
-      console.error('Failed to fetch analytics:', error);
+    } catch (e: any) {
       setDataSource('error');
-      setError(error.message);
+      setError(e.message);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
-  
-  // Helper function to format time
-  const getTimeAgo = (timestamp: number): string => {
-    const seconds = Math.floor((Date.now() - timestamp) / 1000);
-    if (seconds < 60) return 'just now';
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes} min ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    const days = Math.floor(hours / 24);
-    return `${days} day${days > 1 ? 's' : ''} ago`;
-  };
+  }, []);
 
   useEffect(() => {
     fetchAnalytics();
-    
-    // Poll for updates every 30 seconds (reduced from 10s to avoid rate limits)
     const interval = setInterval(() => fetchAnalytics(), 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchAnalytics]);
+
+  const timeAgo = (ts: number) => {
+    const s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 60) return 'just now';
+    if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+    if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+    return `${Math.floor(s / 86400)}d ago`;
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black">
+    <div className="min-h-screen bg-[#0A0A0F] text-white">
       {/* Header */}
-      <header className="border-b border-yellow-600/30 backdrop-blur-sm bg-black/20 sticky top-0 z-50">
+      <header className="border-b border-white/5 backdrop-blur-xl bg-black/40 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors">
-              <ArrowLeft className="w-5 h-5" />
-              <span>Back to Home</span>
+            <Link href="/" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-sm">Back</span>
             </Link>
-            <div className="flex items-center space-x-2">
-              <BarChart3 className="w-6 h-6 text-yellow-500" />
-              <h1 className="text-xl font-bold text-white">Migration Analytics</h1>
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-yellow-500" />
+              <h1 className="text-lg font-bold">Analytics</h1>
             </div>
+            <button
+              onClick={() => fetchAnalytics(true)}
+              disabled={refreshing}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* Live Data Status Banner */}
-        <div className={`mb-6 p-4 rounded-lg flex items-center justify-between ${
-          dataSource === 'error' ? 'bg-red-900/20 border border-red-500/30' : 
-          dataSource === 'cache' ? 'bg-blue-900/20 border border-blue-500/30' :
-          'bg-green-900/20 border border-green-500/30'
-        }`}>
-          <div className="flex items-center gap-3">
-            {dataSource === 'error' ? (
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Status pill */}
+        <div className="flex items-center gap-3 mb-8">
+          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
+            dataSource === 'error'
+              ? 'bg-red-500/10 border border-red-500/20 text-red-300'
+              : dataSource === 'cache'
+              ? 'bg-blue-500/10 border border-blue-500/20 text-blue-300'
+              : 'bg-green-500/10 border border-green-500/20 text-green-300'
+          }`}>
+            {dataSource === 'error' ? <WifiOff className="w-3 h-3" /> : <Wifi className="w-3 h-3" />}
+            {dataSource === 'error' ? 'Offline' : dataSource === 'cache' ? 'Cached' : 'Live'}
+          </div>
+          <span className="text-xs text-gray-600">
+            Updated {lastUpdate.toLocaleTimeString()}
+          </span>
+          {error && <span className="text-xs text-red-400">{error}</span>}
+        </div>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {[
+            { label: 'Transactions', value: stats.total.toLocaleString(), icon: Activity, color: 'yellow' },
+            { label: 'Volume', value: `${stats.volume.toFixed(2)} SOL`, icon: TrendingUp, color: 'green' },
+            { label: 'Success Rate', value: `${stats.successRate}%`, icon: Zap, color: 'amber' },
+            { label: 'Unique Accounts', value: stats.accounts.toLocaleString(), icon: Users, color: 'blue' },
+          ].map((s, i) => (
+            <div key={i} className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
+              <div className="flex items-center gap-2 mb-3">
+                <s.icon className={`w-4 h-4 text-${s.color}-400/60`} />
+                <span className="text-xs text-gray-500">{s.label}</span>
+              </div>
+              <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent">
+                {loading ? '—' : s.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Charts row */}
+        <div className="grid lg:grid-cols-3 gap-6 mb-8">
+          {/* Area chart — 2 cols */}
+          <div className="lg:col-span-2 p-6 rounded-2xl bg-white/[0.02] border border-white/5">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-sm font-semibold text-gray-300">Transaction Volume (7 Days)</h3>
+              <span className="text-[10px] text-gray-600 uppercase tracking-wider">Live Data</span>
+            </div>
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={dailyData}>
+                <defs>
+                  <linearGradient id="colorTx" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#eab308" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#eab308" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
+                <XAxis dataKey="name" stroke="#4b5563" tick={{ fontSize: 11 }} />
+                <YAxis stroke="#4b5563" tick={{ fontSize: 11 }} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, fontSize: 12 }}
+                  labelStyle={{ color: '#9ca3af' }}
+                />
+                <Area type="monotone" dataKey="transactions" stroke="#eab308" strokeWidth={2} fillOpacity={1} fill="url(#colorTx)" name="Transactions" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Pie chart — 1 col */}
+          <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5">
+            <h3 className="text-sm font-semibold text-gray-300 mb-6">Program Distribution</h3>
+            {programData.length > 0 ? (
               <>
-                <WifiOff className="w-5 h-5 text-red-400" />
-                <div>
-                  <p className="text-red-300 font-semibold">Connection Error</p>
-                  <p className="text-red-200/80 text-sm">{error || 'Unable to fetch blockchain data'}</p>
-                </div>
-              </>
-            ) : dataSource === 'cache' ? (
-              <>
-                <Wifi className="w-5 h-5 text-blue-400" />
-                <div>
-                  <p className="text-blue-300 font-semibold">Cached Data</p>
-                  <p className="text-blue-200/80 text-sm">{cacheInfo || 'Using cached blockchain data to reduce RPC load'}</p>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie data={programData} cx="50%" cy="50%" outerRadius={80} innerRadius={50}
+                      dataKey="count" paddingAngle={3} stroke="none">
+                      {programData.map((_, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, fontSize: 12 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="mt-4 space-y-2">
+                  {programData.map((p, i) => (
+                    <div key={i} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                        <span className="text-gray-400">{p.name}</span>
+                      </div>
+                      <span className="text-white font-medium">{p.count}</span>
+                    </div>
+                  ))}
                 </div>
               </>
             ) : (
-              <>
-                <Wifi className="w-5 h-5 text-green-400" />
-                <div>
-                  <p className="text-green-300 font-semibold">Live Solana Data</p>
-                  <p className="text-green-200/80 text-sm">Real-time blockchain data from Solana mainnet</p>
-                </div>
-              </>
+              <div className="flex items-center justify-center h-52 text-gray-600 text-sm">No data yet</div>
             )}
           </div>
-          <button
-            onClick={() => fetchAnalytics(true)}
-            disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 text-white ${refreshing ? 'animate-spin' : ''}`} />
-            <span className="text-white text-sm">Refresh</span>
-          </button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatCard
-            icon={<Activity className="w-8 h-8 text-yellow-400" />}
-            title="Total Migrations"
-            value={stats.totalMigrations.toLocaleString()}
-            change="+12.5%"
-            positive
-          />
-          <StatCard
-            icon={<TrendingUp className="w-8 h-8 text-green-400" />}
-            title="Total Value"
-            value={`${stats.totalValue.toFixed(2)} SOL`}
-            change="+8.3%"
-            positive
-          />
-          <StatCard
-            icon={<Zap className="w-8 h-8 text-yellow-400" />}
-            title="Success Rate"
-            value={`${stats.successRate.toFixed(1)}%`}
-            change="+0.2%"
-            positive
-          />
-          <StatCard
-            icon={<Users className="w-8 h-8 text-amber-400" />}
-            title="Active Users"
-            value={stats.activeUsers.toString()}
-            change="+15.7%"
-            positive
-          />
-        </div>
-
-        {/* Charts */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
-          {/* Migration Volume Chart */}
-          <div className="bg-gradient-to-br from-yellow-900/20 to-amber-900/20 backdrop-blur-sm border border-yellow-700/30 rounded-2xl p-6">
-            <h3 className="text-xl font-bold text-white mb-4">Migration Volume (7 Days)</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={migrationData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#4a4a4a" />
-                <XAxis dataKey="name" stroke="#9ca3af" />
-                <YAxis stroke="#9ca3af" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(17, 24, 39, 0.9)',
-                    border: '1px solid rgba(234, 179, 8, 0.3)',
-                    borderRadius: '8px',
-                    color: '#fff',
-                  }}
-                />
-                <Legend />
-                <Line type="monotone" dataKey="migrations" stroke="#eab308" strokeWidth={2} name="Migrations" />
-              </LineChart>
-            </ResponsiveContainer>
+        {/* Recent transactions */}
+        <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-sm font-semibold text-gray-300">Recent Transactions</h3>
+            <span className="text-[10px] text-gray-600 uppercase tracking-wider">{recentTxs.length} results</span>
           </div>
 
-          {/* Contract Types Chart */}
-          <div className="bg-gradient-to-br from-yellow-900/20 to-amber-900/20 backdrop-blur-sm border border-yellow-700/30 rounded-2xl p-6">
-            <h3 className="text-xl font-bold text-white mb-4">Contract Types Migrated</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={contractData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#4a4a4a" />
-                <XAxis dataKey="name" stroke="#9ca3af" />
-                <YAxis stroke="#9ca3af" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(17, 24, 39, 0.9)',
-                    border: '1px solid rgba(245, 158, 11, 0.3)',
-                    borderRadius: '8px',
-                    color: '#fff',
-                  }}
-                />
-                <Bar dataKey="count" fill="#f59e0b" name="Contracts" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Recent Migrations Table */}
-        <div className="bg-gradient-to-br from-yellow-900/20 to-amber-900/20 backdrop-blur-sm border border-yellow-700/30 rounded-2xl p-6">
-          <h3 className="text-xl font-bold text-white mb-4">Recent Migrations</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-yellow-700/30">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">Type</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">From (EVM)</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">To (Solana)</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">Value</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">Time</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentMigrations.map((migration) => (
-                  <tr key={migration.id} className="border-b border-yellow-700/10 hover:bg-yellow-900/10 transition-colors">
-                    <td className="py-3 px-4 text-sm text-white">{migration.type}</td>
-                    <td className="py-3 px-4 text-sm text-gray-400 font-mono">{migration.from}</td>
-                    <td className="py-3 px-4 text-sm text-gray-400 font-mono">{migration.to}</td>
-                    <td className="py-3 px-4 text-sm text-white font-semibold">{migration.value}</td>
-                    <td className="py-3 px-4 text-sm text-gray-400">{migration.time}</td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
-                          migration.status === 'success'
-                            ? 'bg-green-600/20 text-green-300 border border-green-500/30'
-                            : 'bg-yellow-600/20 text-yellow-300 border border-yellow-500/30'
-                        }`}
-                      >
-                        {migration.status}
-                      </span>
-                    </td>
+          {recentTxs.length === 0 && !loading ? (
+            <div className="text-center py-12 text-gray-600 text-sm">No transactions found</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/5">
+                    <th className="text-left py-3 px-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="text-left py-3 px-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Sender</th>
+                    <th className="text-left py-3 px-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Receiver</th>
+                    <th className="text-right py-3 px-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                    <th className="text-right py-3 px-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                    <th className="text-center py-3 px-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="text-center py-3 px-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Tx</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {recentTxs.map(tx => (
+                    <tr key={tx.id} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
+                      <td className="py-3 px-3 text-gray-300 font-medium">{tx.type}</td>
+                      <td className="py-3 px-3 font-mono text-gray-500 text-xs">{tx.from}</td>
+                      <td className="py-3 px-3 font-mono text-gray-500 text-xs">{tx.to}</td>
+                      <td className="py-3 px-3 text-right text-white font-medium">{tx.value.toFixed(4)} SOL</td>
+                      <td className="py-3 px-3 text-right text-gray-500 text-xs">{timeAgo(tx.time)}</td>
+                      <td className="py-3 px-3 text-center">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
+                          tx.status === 'success'
+                            ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                            : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                        }`}>{tx.status}</span>
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        <a href={`https://solscan.io/tx/${tx.sig}`} target="_blank" rel="noopener noreferrer"
+                          className="text-yellow-500/50 hover:text-yellow-400 transition-colors">
+                          <ExternalLink className="w-3.5 h-3.5 inline" />
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
-        {/* Token Economics Optimizer */}
-        <div className="mt-8 bg-gradient-to-r from-yellow-600/20 to-amber-600/20 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-8">
-          <h3 className="text-2xl font-bold text-white mb-4">Token Economics Optimizer</h3>
-          <p className="text-gray-300 mb-6">
-            Calculate optimal liquidity distribution and bridge selection for your token migration.
-          </p>
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="p-4 bg-black/30 rounded-lg">
-              <div className="text-sm text-gray-400 mb-1">Recommended Bridge</div>
-              <div className="text-lg font-bold text-white">Wormhole</div>
-              <div className="text-xs text-yellow-300 mt-1">Lowest fees: 0.1%</div>
-            </div>
-            <div className="p-4 bg-black/30 rounded-lg">
-              <div className="text-sm text-gray-400 mb-1">Optimal Liquidity</div>
-              <div className="text-lg font-bold text-white">$250K</div>
-              <div className="text-xs text-amber-300 mt-1">65% Solana / 35% EVM</div>
-            </div>
-            <div className="p-4 bg-black/30 rounded-lg">
-              <div className="text-sm text-gray-400 mb-1">Est. Migration Time</div>
-              <div className="text-lg font-bold text-white">~5-10 min</div>
-              <div className="text-xs text-green-300 mt-1">Network optimized</div>
-            </div>
+        {/* Token Economics */}
+        <div className="p-6 rounded-2xl bg-gradient-to-br from-yellow-500/5 to-amber-500/5 border border-yellow-500/10">
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="w-4 h-4 text-yellow-500" />
+            <h3 className="text-sm font-semibold text-gray-300">Token Economics Optimizer</h3>
+          </div>
+          <p className="text-xs text-gray-500 mb-6">Optimal bridge and liquidity recommendations for your migration.</p>
+          <div className="grid sm:grid-cols-3 gap-4">
+            {[
+              { label: 'Recommended Bridge', value: 'Wormhole', sub: 'Lowest fees: 0.1%', icon: Globe },
+              { label: 'Optimal Liquidity', value: '$250K', sub: '65% Solana / 35% EVM', icon: TrendingUp },
+              { label: 'Est. Migration Time', value: '~5-10 min', sub: 'Network optimized', icon: Clock },
+            ].map((item, i) => (
+              <div key={i} className="p-4 rounded-xl bg-black/30 border border-white/5">
+                <item.icon className="w-4 h-4 text-yellow-500/50 mb-2" />
+                <div className="text-[11px] text-gray-500 mb-1">{item.label}</div>
+                <div className="text-lg font-bold text-white">{item.value}</div>
+                <div className="text-[11px] text-yellow-400/70 mt-1">{item.sub}</div>
+              </div>
+            ))}
           </div>
         </div>
       </main>
@@ -337,23 +288,12 @@ export default function AnalyticsPage() {
   );
 }
 
-function StatCard({ icon, title, value, change, positive }: {
-  icon: React.ReactNode;
-  title: string;
-  value: string;
-  change: string;
-  positive: boolean;
-}) {
+function Globe(props: any) {
   return (
-    <div className="bg-gradient-to-br from-yellow-900/20 to-amber-900/20 backdrop-blur-sm border border-yellow-700/30 rounded-xl p-6">
-      <div className="flex items-center justify-between mb-4">
-        {icon}
-        <span className={`text-sm font-semibold ${positive ? 'text-green-400' : 'text-red-400'}`}>
-          {change}
-        </span>
-      </div>
-      <div className="text-3xl font-bold text-white mb-1">{value}</div>
-      <div className="text-sm text-gray-400">{title}</div>
-    </div>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+      <path d="M2 12h20" />
+    </svg>
   );
 }
