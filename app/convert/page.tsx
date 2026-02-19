@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, Code, Download, Sparkles, Loader2, Check,
-  AlertTriangle, Copy, CheckCircle, FileCode2
+  AlertTriangle, Copy, CheckCircle, FileCode2, ArrowRight, ExternalLink
 } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -246,6 +246,34 @@ contract SimpleVault {
               <div className="text-[11px] text-gray-500">{t.desc}</div>
             </div>
           ))}
+        </div>
+
+        {/* Sunrise Next Steps */}
+        <div className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-orange-500/5 to-yellow-500/5 border border-orange-500/10">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-2xl">🌅</span>
+            <div>
+              <h3 className="text-sm font-semibold text-orange-300">Next: Bridge & Deploy with Sunrise</h3>
+              <p className="text-xs text-gray-500">Your contract is converted! Now bridge your assets to Solana and deploy.</p>
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-3">
+            <Link href="/bridge" className="p-4 rounded-xl bg-black/30 border border-orange-500/10 hover:border-orange-500/30 transition-colors group">
+              <div className="text-lg mb-1">🌉</div>
+              <div className="text-xs font-semibold text-white group-hover:text-orange-300 transition-colors">Bridge Assets</div>
+              <div className="text-[10px] text-gray-600 mt-0.5">Move tokens via Sunrise</div>
+            </Link>
+            <Link href="/migrate" className="p-4 rounded-xl bg-black/30 border border-white/5 hover:border-orange-500/30 transition-colors group">
+              <div className="text-lg mb-1">🔄</div>
+              <div className="text-xs font-semibold text-white group-hover:text-orange-300 transition-colors">Migrate Wallets</div>
+              <div className="text-[10px] text-gray-600 mt-0.5">Transfer full wallet state</div>
+            </Link>
+            <Link href="/sunrise-guide" className="p-4 rounded-xl bg-black/30 border border-white/5 hover:border-orange-500/30 transition-colors group">
+              <div className="text-lg mb-1">📚</div>
+              <div className="text-xs font-semibold text-white group-hover:text-orange-300 transition-colors">Full Guide</div>
+              <div className="text-[10px] text-gray-600 mt-0.5">Step-by-step migration</div>
+            </Link>
+          </div>
         </div>
       </main>
 

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, BarChart3, TrendingUp, Users, Zap, Activity,
-  RefreshCw, Wifi, WifiOff, ExternalLink, Sparkles, Clock
+  RefreshCw, Wifi, WifiOff, ExternalLink, Sparkles, Clock, Globe
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis,
@@ -270,9 +270,9 @@ export default function AnalyticsPage() {
           <p className="text-xs text-gray-500 mb-6">Optimal bridge and liquidity recommendations for your migration.</p>
           <div className="grid sm:grid-cols-3 gap-4">
             {[
-              { label: 'Recommended Bridge', value: 'Wormhole', sub: 'Lowest fees: 0.1%', icon: Globe },
+              { label: 'Recommended Bridge', value: 'Sunrise', sub: 'Lowest fees: 0.1% + INX', icon: Globe },
               { label: 'Optimal Liquidity', value: '$250K', sub: '65% Solana / 35% EVM', icon: TrendingUp },
-              { label: 'Est. Migration Time', value: '~5-10 min', sub: 'Network optimized', icon: Clock },
+              { label: 'Est. Migration Time', value: '~2-5 min', sub: 'Via Sunrise routes', icon: Clock },
             ].map((item, i) => (
               <div key={i} className="p-4 rounded-xl bg-black/30 border border-white/5">
                 <item.icon className="w-4 h-4 text-yellow-500/50 mb-2" />
@@ -283,17 +283,39 @@ export default function AnalyticsPage() {
             ))}
           </div>
         </div>
+
+        {/* Sunrise Metrics */}
+        <div className="mt-8 p-6 rounded-2xl bg-gradient-to-br from-orange-500/5 to-yellow-500/5 border border-orange-500/10">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🌅</span>
+              <h3 className="text-sm font-semibold text-gray-300">Sunrise Migration Metrics</h3>
+            </div>
+            <a href="https://www.sunrisedefi.com/" target="_blank" rel="noopener noreferrer" className="text-[10px] text-orange-400 hover:text-orange-300 flex items-center gap-1 transition-colors">
+              sunrisedefi.com <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            {[
+              { label: 'INX Price', value: '$0.01', change: '+12.5%', positive: true },
+              { label: 'Bridges Today', value: '1,247', change: '+8.3%', positive: true },
+              { label: 'Chains Supported', value: '6+', change: 'EVM', positive: true },
+              { label: 'Total Bridged', value: '$4.2M', change: '24h volume', positive: true },
+            ].map((m, i) => (
+              <div key={i} className="p-4 rounded-xl bg-black/30 border border-white/5">
+                <div className="text-[11px] text-gray-500 mb-1">{m.label}</div>
+                <div className="text-lg font-bold text-white">{m.value}</div>
+                <div className={`text-[10px] mt-1 ${m.positive ? 'text-green-400' : 'text-red-400'}`}>{m.change}</div>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {['Jupiter', 'Phantom', 'Backpack', 'Orca', 'Drift', 'Mayan', 'Axiom'].map(p => (
+              <span key={p} className="px-3 py-1.5 text-[10px] font-medium text-gray-400 bg-white/5 border border-white/5 rounded-full">{p}</span>
+            ))}
+          </div>
+        </div>
       </main>
     </div>
-  );
-}
-
-function Globe(props: any) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-      <path d="M2 12h20" />
-    </svg>
   );
 }

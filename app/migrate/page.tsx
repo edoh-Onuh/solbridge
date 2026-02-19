@@ -6,7 +6,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import {
   ArrowLeft, Wallet, ArrowDown, Loader2, Check, AlertTriangle,
-  ExternalLink, Shield, Zap, Activity, Info
+  ExternalLink, Shield, Zap, Activity, Info, ArrowRight
 } from 'lucide-react';
 
 const STEPS = ['Connect Wallets', 'Review Assets', 'Confirm Migration'];
@@ -217,6 +217,25 @@ export default function MigratePage() {
               <div className="text-[10px] text-gray-600 mt-0.5">{sub}</div>
             </div>
           ))}
+        </div>
+
+        {/* Sunrise Bridge CTA */}
+        <div className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-orange-500/5 to-yellow-500/5 border border-orange-500/10">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-2xl">🌅</span>
+            <div>
+              <h3 className="text-sm font-semibold text-orange-300">Need to bridge assets first?</h3>
+              <p className="text-xs text-gray-500">Use Sunrise to bridge tokens from any EVM chain to Solana before migrating</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Link href="/bridge" className="flex-1 py-3 text-center text-sm font-bold bg-gradient-to-r from-orange-500 to-amber-500 text-black rounded-xl hover:from-orange-600 hover:to-amber-600 transition-all flex items-center justify-center gap-2">
+              🌅 Bridge via Sunrise <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link href="/sunrise-guide" className="py-3 px-4 text-center text-xs font-medium bg-white/5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 transition-colors flex items-center gap-1">
+              Guide <ExternalLink className="w-3 h-3" />
+            </Link>
+          </div>
         </div>
       </main>
     </div>

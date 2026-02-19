@@ -7,7 +7,7 @@ import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import {
   ArrowRight, Code, Wallet, BarChart3, Zap, Shield, Sparkles,
   Activity, Globe, Layers, Menu, X, ChevronRight, CheckCircle2,
-  GitBranch, ArrowUpRight, Clock, Users, TrendingUp
+  GitBranch, ArrowUpRight, Clock, Users, TrendingUp, BookOpen
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -79,9 +79,11 @@ export default function HomePage() {
 
             <nav className="hidden md:flex items-center gap-1">
               {[
+                { label: 'Bridge', href: '/bridge', icon: Globe },
                 { label: 'Convert', href: '/convert', icon: Code },
                 { label: 'Migrate', href: '/migrate', icon: GitBranch },
                 { label: 'Analytics', href: '/analytics', icon: BarChart3 },
+                { label: 'Guide', href: '/sunrise-guide', icon: BookOpen },
               ].map(item => (
                 <Link key={item.href} href={item.href}
                   className="flex items-center gap-1.5 px-4 py-2 text-sm text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-all">
@@ -106,9 +108,11 @@ export default function HomePage() {
           <div className="md:hidden border-t border-white/5 bg-black/95 backdrop-blur-xl animate-fade-in">
             <div className="p-4 space-y-1">
               {[
+                { label: 'Bridge via Sunrise', href: '/bridge', icon: Globe, desc: 'Cross-chain asset bridging' },
                 { label: 'Convert Contracts', href: '/convert', icon: Code, desc: 'AI-powered Solidity → Rust' },
                 { label: 'Migrate Wallets', href: '/migrate', icon: GitBranch, desc: 'Cross-chain asset transfer' },
                 { label: 'Analytics', href: '/analytics', icon: BarChart3, desc: 'Live blockchain metrics' },
+                { label: 'Migration Guide', href: '/sunrise-guide', icon: BookOpen, desc: 'Step-by-step Sunrise guide' },
               ].map(item => (
                 <Link key={item.href} href={item.href} onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors group">
@@ -132,9 +136,9 @@ export default function HomePage() {
       <section className="relative pt-16 sm:pt-24 pb-16 sm:pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 text-xs font-medium mb-8 animate-fade-in">
-              <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
-              Solana Graveyard Hackathon 2026 — Migrations Track
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-300 text-xs font-medium mb-8 animate-fade-in">
+              <span className="text-sm">🌅</span>
+              SolBridge × Sunrise — Migrations Track
             </div>
 
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 animate-slide-up">
@@ -145,19 +149,19 @@ export default function HomePage() {
             </h1>
 
             <p className="text-base sm:text-lg text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed animate-slide-up" style={{ animationDelay: '0.1s' }}>
-              AI-powered smart contract conversion from Solidity to Rust/Anchor,
-              seamless wallet migration, and real-time cross-chain analytics.
+              AI-powered smart contract conversion, cross-chain asset bridging via Sunrise,
+              and real-time analytics — the complete EVM → Solana migration toolkit.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center animate-slide-up" style={{ animationDelay: '0.2s' }}>
-              <Link href="/convert"
-                className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold rounded-xl shadow-lg shadow-yellow-500/25 hover:shadow-yellow-500/40 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                Start Converting
+              <Link href="/bridge"
+                className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-amber-600 text-black font-bold rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                🌅 Bridge via Sunrise
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </Link>
-              <Link href="/analytics"
+              <Link href="/sunrise-guide"
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white font-medium rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]">
-                <BarChart3 className="w-4 h-4" /> View Analytics
+                <BookOpen className="w-4 h-4" /> Migration Guide
               </Link>
             </div>
 
@@ -165,7 +169,7 @@ export default function HomePage() {
               <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> Non-custodial</span>
               <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-yellow-500" /> Security-first</span>
               <span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-amber-500" /> Powered by GPT-4</span>
-              <span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-blue-500" /> Multi-chain</span>
+              <span className="flex items-center gap-1.5"><span className="text-sm">🌅</span> Powered by Sunrise</span>
             </div>
           </div>
         </div>
@@ -209,12 +213,12 @@ export default function HomePage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
+              { icon: Globe, title: 'Sunrise Bridge', desc: 'Bridge assets from 6+ EVM chains to Solana via Sunrise. Earn INX rewards, lowest fees, sub-minute finality.', href: '/bridge', color: 'text-orange-400', bg: 'bg-orange-500/10', tag: 'Sunrise' },
               { icon: Code, title: 'AI Contract Converter', desc: 'GPT-4 powered Solidity → Rust/Anchor conversion with side-by-side diff, complexity analysis, and downloadable output.', href: '/convert', color: 'text-yellow-400', bg: 'bg-yellow-500/10', tag: 'Core' },
-              { icon: GitBranch, title: 'Wallet Migration', desc: 'Connect MetaMask and Phantom simultaneously. Transfer tokens and NFTs across chains via Wormhole with fee optimization.', href: '/migrate', color: 'text-amber-400', bg: 'bg-amber-500/10', tag: 'Core' },
-              { icon: BarChart3, title: 'Live Analytics', desc: 'Real-time dashboard with live Solana mainnet data. Track transactions, success rates, and program activity.', href: '/analytics', color: 'text-green-400', bg: 'bg-green-500/10', tag: 'Dashboard' },
-              { icon: Zap, title: 'Token Optimizer', desc: 'Calculate optimal liquidity distribution, select best bridges, and estimate migration duration from network conditions.', href: '/analytics', color: 'text-yellow-400', bg: 'bg-yellow-500/10', tag: 'Tooling' },
+              { icon: GitBranch, title: 'Wallet Migration', desc: 'Connect MetaMask and Phantom simultaneously. Transfer tokens and NFTs across chains via Sunrise with fee optimization.', href: '/migrate', color: 'text-amber-400', bg: 'bg-amber-500/10', tag: 'Core' },
+              { icon: BarChart3, title: 'Live Analytics', desc: 'Real-time dashboard with live Solana mainnet data. Track transactions, Sunrise metrics, and program activity.', href: '/analytics', color: 'text-green-400', bg: 'bg-green-500/10', tag: 'Dashboard' },
+              { icon: BookOpen, title: 'Migration Guide', desc: 'Step-by-step interactive guide for migrating your project to Solana using Sunrise. Complete with checklist.', href: '/sunrise-guide', color: 'text-purple-400', bg: 'bg-purple-500/10', tag: 'Guide' },
               { icon: Shield, title: 'Security Audit', desc: 'Automated security analysis of converted contracts. Detect reentrancy, overflow, and access control vulnerabilities.', href: '/convert', color: 'text-red-400', bg: 'bg-red-500/10', tag: 'Security' },
-              { icon: Layers, title: 'State Migration', desc: 'Transform and migrate on-chain state with schema mapping, data validation, and automatic rollback protection.', href: '/migrate', color: 'text-blue-400', bg: 'bg-blue-500/10', tag: 'Advanced' },
             ].map((f, i) => (
               <Link key={i} href={f.href} className="group relative">
                 <div className="h-full p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-yellow-500/20 hover:bg-white/[0.04] transition-all duration-300">
@@ -240,14 +244,15 @@ export default function HomePage() {
       <section className="relative py-20 sm:py-28 bg-white/[0.01]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">How it <span className="text-yellow-400">works</span></h2>
-            <p className="text-gray-400 max-w-xl mx-auto">Three simple steps to migrate your EVM project to Solana.</p>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">How it <span className="text-orange-400">works</span></h2>
+            <p className="text-gray-400 max-w-xl mx-auto">Four simple steps to migrate your EVM project to Solana using Sunrise.</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-4 gap-6">
             {[
-              { step: '01', title: 'Connect & Upload', desc: 'Connect your Solana wallet and paste your Solidity smart contract into the converter.', icon: Wallet },
-              { step: '02', title: 'AI Converts', desc: 'GPT-4 analyzes your contract, maps patterns to Anchor/Rust equivalents, and generates production-ready code.', icon: Code },
-              { step: '03', title: 'Migrate & Deploy', desc: 'Transfer your assets, deploy the converted contract, and monitor everything with real-time analytics.', icon: Zap },
+              { step: '01', title: 'Bridge via Sunrise', desc: 'Bridge your assets from any EVM chain to Solana using Sunrise\'s cross-chain routes + INX rewards.', icon: Globe },
+              { step: '02', title: 'Convert Contracts', desc: 'GPT-4 analyzes your Solidity contract and generates production-ready Rust/Anchor code.', icon: Code },
+              { step: '03', title: 'Migrate & Deploy', desc: 'Transfer remaining assets, deploy converted contracts, and list on Sunrise.', icon: Zap },
+              { step: '04', title: 'Monitor & Grow', desc: 'Track everything with real-time analytics. Your token is now tradeable via Sunrise ecosystem.', icon: BarChart3 },
             ].map((s, i) => (
               <div key={i} className="relative text-center">
                 <div className="text-7xl font-black text-white/[0.03] absolute -top-4 left-1/2 -translate-x-1/2 select-none pointer-events-none">{s.step}</div>
@@ -258,7 +263,7 @@ export default function HomePage() {
                   <h3 className="text-lg font-bold text-white mb-2">{s.title}</h3>
                   <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">{s.desc}</p>
                 </div>
-                {i < 2 && <div className="hidden md:block absolute top-16 -right-4 w-8 text-yellow-600/20"><ChevronRight className="w-8 h-8" /></div>}
+                {i < 3 && <div className="hidden md:block absolute top-16 -right-4 w-8 text-yellow-600/20"><ChevronRight className="w-8 h-8" /></div>}
               </div>
             ))}
           </div>
@@ -293,20 +298,63 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Sunrise Partnership */}
+      <section className="relative py-16 sm:py-20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-orange-500/5 to-yellow-500/5 border border-orange-500/10">
+            <div className="flex flex-col md:flex-row items-center gap-8">
+              <div className="flex-1 text-center md:text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-300 text-xs font-medium mb-4">
+                  <span>🌅</span> Powered by Sunrise
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">Cross-Chain Migration with Sunrise</h2>
+                <p className="text-sm text-gray-400 mb-6 max-w-lg">Sunrise brings newly listed assets to Solana from wherever they launch. SolBridge integrates Sunrise&apos;s cross-chain infrastructure to give you the smoothest migration experience — with INX token rewards on every bridge.</p>
+                <div className="flex flex-wrap gap-2 justify-center md:justify-start mb-6">
+                  {['Jupiter', 'Phantom', 'Backpack', 'Orca', 'Drift', 'Mayan'].map(p => (
+                    <span key={p} className="px-3 py-1 text-[10px] font-medium text-gray-400 bg-white/5 border border-white/5 rounded-full">{p}</span>
+                  ))}
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
+                  <Link href="/bridge" className="group inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-600 text-black font-bold rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                    🌅 Start Bridging <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                  <a href="https://www.sunrisedefi.com/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium rounded-xl transition-all">
+                    Learn about Sunrise <ArrowUpRight className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 shrink-0">
+                {[
+                  { value: '6+', label: 'EVM Chains', color: 'orange' },
+                  { value: '0.1%', label: 'Bridge Fee', color: 'green' },
+                  { value: '<5min', label: 'Bridge Time', color: 'yellow' },
+                  { value: 'INX', label: 'Rewards', color: 'amber' },
+                ].map((s, i) => (
+                  <div key={i} className="text-center p-4 rounded-xl bg-black/30 border border-white/5">
+                    <div className={`text-xl font-bold text-${s.color}-400`}>{s.value}</div>
+                    <div className="text-[10px] text-gray-500">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="relative py-20 sm:py-28">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-yellow-500/5 to-amber-500/5 border border-yellow-500/10">
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Ready to bridge to Solana?</h2>
-            <p className="text-gray-400 mb-8 max-w-lg mx-auto">Join developers moving to the fastest blockchain. Non-custodial, AI-powered, and built for production.</p>
+            <p className="text-gray-400 mb-8 max-w-lg mx-auto">Join developers migrating to Solana with Sunrise. Non-custodial, AI-powered, and built for production.</p>
             {publicKey ? (
-              <Link href="/migrate"
-                className="group inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold rounded-xl shadow-lg shadow-yellow-500/25 hover:shadow-yellow-500/40 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                Start Your Migration <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              <Link href="/bridge"
+                className="group inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-amber-600 text-black font-bold rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                🌅 Bridge via Sunrise <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             ) : (
               <div className="flex flex-col items-center gap-4">
-                <p className="text-yellow-300/70 text-sm">Connect your wallet to get started</p>
+                <p className="text-orange-300/70 text-sm">Connect your wallet to get started</p>
                 {isMounted && <WalletMultiButton />}
               </div>
             )}
@@ -325,12 +373,15 @@ export default function HomePage() {
               <span className="text-sm text-gray-500">SolBridge © 2026</span>
             </div>
             <div className="flex items-center gap-6 text-xs text-gray-600">
+              <Link href="/bridge" className="hover:text-gray-400 transition-colors">Bridge</Link>
               <Link href="/convert" className="hover:text-gray-400 transition-colors">Convert</Link>
               <Link href="/migrate" className="hover:text-gray-400 transition-colors">Migrate</Link>
               <Link href="/analytics" className="hover:text-gray-400 transition-colors">Analytics</Link>
+              <Link href="/sunrise-guide" className="hover:text-gray-400 transition-colors">Guide</Link>
+              <a href="https://www.sunrisedefi.com/" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">Sunrise</a>
               <a href="https://github.com/edoh-Onuh/solbridge" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">GitHub</a>
             </div>
-            <div className="text-xs text-gray-600">Solana Graveyard Hackathon — Migrations Track</div>
+            <div className="text-xs text-gray-600">SolBridge × Sunrise — Migrations Track</div>
           </div>
         </div>
       </footer>
